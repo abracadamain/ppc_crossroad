@@ -1,22 +1,21 @@
-import random
-import time
-from traffic_gen import mq_creation, genere_vehicule
+from traffic_gen import genere_traffic, routes
+import numpy as np
+import multiprocessing.shared_memory as sm
+import os
+import signal
 
-key_north = 100
-key_south = 200
-key_east = 300
-key_west = 400
-
-def genere_traffic_prio(routes, densite) :
-    while True :
-        source = random.choice(routes)
-        mq = mq_creation(int(source))
-        vehicule_prio = genere_vehicule(source, routes)
-        mq.send(vehicule_prio, type=2) #type 2 : traffic prio
-        time.sleep(densite)
+def signal_prio(source) :
+    existing_shm = sm.SharedMemory(name="lights_pid")
+    lights_pid = np.ndarray((1,), dtype=np.int32, buffer=existing_shm.buf)
+    if source == 100 :
+        sig = signal.SIGUSR1 #north
+    elif source == 200 :
+        sig = signal.SIGUSR2 #south
+    elif source == 300 :
+        sig = signal.SIGRTMIN #east
+    else :
+        sig = signal.SIGRTMIN+1 #west
+    os.kill(lights_pid, sig)
 
 if __name__ == "__main__" :
-    routes = [key_north, key_south, key_east, key_west]
-    genere_traffic_prio(routes, 5)
-    
-    #ajouter envoit signal (pid récuperable ou enfant obligé?)
+    genere_traffic(routes, 5, True)
