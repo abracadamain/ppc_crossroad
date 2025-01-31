@@ -1,31 +1,22 @@
-import sysv_ipc
 import random
+import time
+from traffic_gen import mq_creation, genere_vehicule
 
 key_north = 100
 key_south = 200
 key_east = 300
 key_west = 400
 
-# ! CREAT crée la queue mais si existe déjà réutilise : attention a supprimer à la fin
-def mq_creation(key) :
-    mq = sysv_ipc.MessageQueue(key, sysv_ipc.IPC_CREAT)
-    return mq
+def genere_traffic_prio(routes, densite) :
+    while True :
+        source = random.choice(routes)
+        mq = mq_creation(int(source))
+        vehicule_prio = genere_vehicule(source, routes)
+        mq.send(vehicule_prio, type=2) #type 2 : traffic prio
+        time.sleep(densite)
 
-def genere_vehicule(source, destinations) :
-    print(source)
-    destinations.remove(source) #demi-tour non autorisé
-    destination = random.choice(destinations)
-    print(vehicule_prio)
-    vehicule_prio = (destination).encode()
-    return vehicule_prio
-
-def genere_traffic_prio(routes) :
-    source = random.choice(routes)
-    mq = mq_creation(int(source))
-    vehicule_prio = genere_vehicule(source, routes)
-    mq.send(vehicule_prio)
-
-routes = [key_north, key_south, key_east, key_west]
-routes = [str(r) for r in routes]
-genere_traffic_prio(routes)
-#ajouter type (prio ou normal) et ajouter envoit signal (pid récuperable ou enfant obligé?)
+if __name__ == "__main__" :
+    routes = [key_north, key_south, key_east, key_west]
+    genere_traffic_prio(routes, 5)
+    
+    #ajouter envoit signal (pid récuperable ou enfant obligé?)
