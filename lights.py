@@ -13,7 +13,7 @@ SIGNAL_EAST = signal.SIGRTMIN+1  # east
 traffic_state = multiprocessing.Value('i', 0) # 0: NS green light, 1: WE green light
 priority_mode = multiprocessing.Value('i', 0)  # 0: normal state, 1: priority state
 priority_source = multiprocessing.Value('i', -1)  # record the direction of the priority car (-1: no, 0: N, 1: S, 2: W, 3: E)
-light_state=sm.SharedMemory(create=True,size=4,name=light_state)
+light_state=sm.SharedMemory(create=True,size=4,name="light_state")
 data=np.array([True,True,False,False])
 shared_array=np.ndarray(data.shape,dtype=np.bool_,buffer=light_state.buf)
 
@@ -68,11 +68,12 @@ def normal_light_change():
 
 def main():
     process_id = os.getpid()
-    print(f"Lights process started with PID: {process_id}")
+    lights_pid =sm.SharedMemory(create=True,name="lights_pid")
+    data=np.array([process_id])
+    shared_array=np.ndarray(data.shape,dtype=np.int32,buffer=lights_pid.buf)
 
     setup_signal_handlers()
 
-   
     light_process = multiprocessing.Process(target=normal_light_change)
     light_process.start()
 
