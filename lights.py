@@ -18,7 +18,7 @@ data=np.array([True,True,False,False])
 shared_array=np.ndarray(data.shape,dtype=np.bool_,buffer=light_state.buf)
 
 def display_light():
-    with traffic_state.get_lock(), priority_mode.get_lock(), priority_direction.get_lock():
+    with traffic_state.get_lock(), priority_mode.get_lock(), priority_source.get_lock():
         if priority_mode.value == 1:
             directions = ["north", "south", "west", "east"]
             data[:]=False
@@ -32,16 +32,16 @@ def display_light():
 
 
 def handle_priority_vehicle(signum, frame):
-    with priority_mode.get_lock(), priority_direction.get_lock():
+    with priority_mode.get_lock(), priority_source.get_lock():
         priority_mode.value = 1
         if signum == SIGNAL_NORTH:
-            priority_direction.value = 0
+            priority_source.value = 0
         elif signum == SIGNAL_SOUTH:
-            priority_direction.value = 1
+            priority_source.value = 1
         elif signum == SIGNAL_WEST:
-            priority_direction.value = 2
+            priority_source.value = 2
         elif signum == SIGNAL_EAST:
-            priority_direction.value = 3
+            priority_source.value = 3
     display_light()
     time.sleep(5)  
     with priority_mode.get_lock():
@@ -68,9 +68,9 @@ def normal_light_change():
 
 def main():
     process_id = os.getpid()
-    lights_pid =sm.SharedMemory(create=True,name="lights_pid")
-    data=np.array([process_id])
-    shared_array=np.ndarray(data.shape,dtype=np.int32,buffer=lights_pid.buf)
+    lights_pid = sm.SharedMemory(create=True, size=4, name="lights_pid")
+    pid_array = np.ndarray((1,), dtype=np.int32, buffer=lights_pid.buf)
+    pid_array[0] = process_id
 
     setup_signal_handlers()
 
@@ -79,7 +79,7 @@ def main():
 
     try:
         while True:
-        time.sleep(1)
+            time.sleep(1)
     except KeyboardInterrupt:
         print("Arrêt du processus des feux.")
     finally:
@@ -87,5 +87,7 @@ def main():
         light_process.join()
         light_state.close()
         light_state.unlink()
+        lights_pid.close()
+        lights_pid.unlink()
 if __name__ == "__main__":
     main()
