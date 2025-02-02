@@ -17,7 +17,6 @@ def mq_creation(key) :
 
 def genere_vehicule(source, destinations) :
     print(source)
-    destinations.remove(source) #demi-tour non autorisé
     destination = random.choice(destinations)
     print(vehicule_prio)
     vehicule_prio = (str(destination)).encode()

@@ -5,8 +5,8 @@ import os
 import signal
 
 def signal_prio(source) :
-    existing_shm = sm.SharedMemory(name="lights_pid")
-    lights_pid = np.ndarray((1,), dtype=np.int32, buffer=existing_shm.buf)
+    lights_pid_shm = sm.SharedMemory(name="lights_pid")
+    lights_pid = np.ndarray((1,), dtype=np.int32, buffer=lights_pid_shm.buf)
     if source == 100 :
         sig = signal.SIGUSR1 #north
     elif source == 200 :
