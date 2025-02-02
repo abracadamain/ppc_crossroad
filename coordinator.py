@@ -3,6 +3,8 @@ import multiprocessing.shared_memory as sm
 import numpy as np
 import time
 import socket
+from multiprocessing import Lock
+from traffic_gen import mq_creation
 
 # Configuration du socket TCP
 HOST = "127.0.0.1"
@@ -15,10 +17,10 @@ key_east = 300
 key_west = 400
 
 queues = {
-    key_north: sysv_ipc.MessageQueue(key_north, sysv_ipc.IPC_CREAT),
-    key_south: sysv_ipc.MessageQueue(key_south, sysv_ipc.IPC_CREAT),
-    key_east: sysv_ipc.MessageQueue(key_east, sysv_ipc.IPC_CREAT),
-    key_west: sysv_ipc.MessageQueue(key_west, sysv_ipc.IPC_CREAT)
+    key_north: mq_creation(key_north),
+    key_south: mq_creation(key_south),
+    key_east: mq_creation(key_east),
+    key_west: mq_creation(key_west)
 }
 
 # Chargement de l'état des feux depuis la mémoire partagée
@@ -32,15 +34,11 @@ opposite = {key_north: key_south, key_south: key_north, key_east: key_west, key_
 
 waiting_vehicles = []  # Liste des véhicules en attente
 
-def send_to_display(message):
+def send_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, PORT))
-            s.sendall(message.encode())
-    except ConnectionRefusedError:
-        print("⚠️ Impossible de se connecter au display. Vérifiez qu'il est bien démarré.")
-
+    with display_socket :
+        display_socket.sendall(message.encode())
+    
 def process_traffic():
     global waiting_vehicles
     while True:
@@ -101,6 +99,10 @@ def keys_to_index(key):
     return {100: 0, 200: 1, 300: 2, 400: 3}.get(key, -1)
 
 if __name__ == "__main__":
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as coord_socket:
+        coord_socket.bind((HOST, PORT))
+        coord_socket.listen(1)
+        display_socket, address = coord_socket.accept()
     try:
         print("🚦 Démarrage du coordinateur...")
         process_traffic()
