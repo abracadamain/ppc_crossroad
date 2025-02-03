@@ -42,11 +42,39 @@ def display():
                 client_socket.settimeout(2)  
                 data, _ = client_socket.recvfrom(1024)  
                 data=data.decode()
-                
+                source,destination,prio=data.split(",")
+                if source == "north":
+                    if destination == "south":
+                        print("car {prio} comming from the {source} go straight to {destination}")
+                    elif destination =="east":
+                        print("car {prio} comming from the {source} turns right to {destination}")
+                    else:
+                        print("car {prio} comming from the {source} turns left to {destination}")
+                elif source == "south":
+                    if destination == "north":
+                        print("car {prio} comming from the {source} go straight to {destination}")
+                    elif destination =="west":
+                        print("car {prio} comming from the {source} turns right to {destination}")
+                    else:
+                        print("car {prio} comming from the {source} turns left to {destination}")
+                elif source == "east":
+                    if destination == "west":
+                        print("car {prio} comming from the {source} go straight to {destination}")
+                    elif destination =="south":
+                        print("car {prio} comming from the {source} turns right to {destination}")
+                    else:
+                        print("car {prio} comming from the {source} turns left to {destination}")
+                else: 
+                    if destination == "east":
+                        print("car {prio} comming from the {source} go straight to {destination}")
+                    elif destination =="north":
+                        print("car {prio} comming from the {source} turns right to {destination}")
+                    else:
+                        print("car {prio} comming from the {source} turns left to {destination}")
             except socket.timeout:
                 pass  
 
-            time.sleep(1)
+            time.sleep(2)
 
 if __name__ == "__main__":
     try:
