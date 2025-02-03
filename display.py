@@ -4,8 +4,8 @@ import numpy as np
 import time
 
 # Configuration du socket pour recevoir les infos de `coordinator.py`
-HOST = 'local_host'  
-PORT = 6666       
+HOST = "127.0.0.1"
+PORT = 65432
 
 
 

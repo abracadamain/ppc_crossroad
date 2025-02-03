@@ -21,14 +21,17 @@ def display_light():
     with traffic_state.get_lock(), priority_mode.get_lock(), priority_source.get_lock():
         if priority_mode.value == 1:
             directions = ["north", "south", "west", "east"]
-            data[:]=False
-            data[priority_source.value]=True
-
+            shared_array[:]=False
+            print(priority_source.value)
+            shared_array[priority_source.value]=True
+            print(shared_array)
         else:
             if traffic_state.value == 0:
                 shared_array[:] = [True, True, False, False] 
+                print(shared_array)
             else:
                 shared_array[:] = [False, False, True, True]
+                print(shared_array)
 
 
 def handle_priority_vehicle(signum, frame):
