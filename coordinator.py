@@ -5,12 +5,21 @@ import time
 import socket
 from multiprocessing import Lock
 from traffic_gen import mq_creation, key_north, key_south, key_east, key_west
+import signal
+
+#arret clavier
+not_stopped = True
+
+def handler_arret_clavier(sig, frame):
+    global not_stopped
+    if sig == signal.SIGINT:
+        not_stopped = False
 
 # Configuration du socket TCP
 HOST = "127.0.0.1"
 PORT = 65432
 
-queues = {
+mqueues = {
     key_north: mq_creation(key_north),
     key_south: mq_creation(key_south),
     key_east: mq_creation(key_east),
@@ -32,60 +41,54 @@ def send_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
     with display_socket :
         display_socket.sendall(message.encode())
+
+def format_message(source, destination, prio=False) :
+    "définit le format du message(véhicule) à envoyer au display"
+    return str(source) + "," + destination + "," + str(prio)
     
 def gestion_priorite(current_light_state):
-    """renvoie le prochain véhicule à passer (source, destinations)"""
+    """renvoie le prochain véhicule à passer (source, destinations, prio)"""
     global waiting_vehicles
-    for key, queue in queues.items():
-        try:
-            message, msg_type = queue.receive(block=False)
-            destination = int(message.decode())
+    for key, mqueue in mqueues.items():
+        if current_light_state[keys_to_index(key)] : #si cette mqueue a le feu vert(True)
+            try:
+                message, msg_type = mqueue.receive(block=False)
+                destination = message.decode()
 
-            if msg_type == 2:  # 🚨 Prioritaire : Passe immédiatement
-                send_to_display(f"🚨 Prioritaire {key} -> {destination}, passage immédiat.")
-                continue 
+                if msg_type == 2:  # 🚨 Prioritaire : Passe immédiatement
+                    return format_message(key, destination, True)
 
-            elif msg_type == 1:  # 🚗 Normal
-                #Remettre dans la file=retourne à la fin! a changer (parcours uniquement les queues correspondantes au current light state)
-                if not light_state[keys_to_index(key)]:  # Feu rouge
-                    queue.send(message, type=1)  # Remettre dans la file d'attente
-                    continue
+                elif msg_type == 1:  # 🚗 Normal
+                    if destination != left_turns[key]:  # 🚗⬆️ Va tout droit (Priorité 1)
+                        return format_message
+                    elif destination == left_turns[key]:  # ⬅️ Tourne à gauche (Priorité 3)
+                        waiting_vehicles.append((key, destination)) #en attente, on verif d'abord que les véhicules d'en face passent d'abord
+                        """
+                        blocking_vehicles = [
+                            v for v in waiting_vehicles 
+                            if v[1] in (right_turns[v[0]], opposite[v[0]])  # Droite ou tout droit
+                        ]
+                        if blocking_vehicles:
+                           # attend priorité
+                            waiting_vehicles.append((key, destination, message))
+                        else:
+                            send_to_display(f"✅ {key} tourne à gauche vers {destination}, passage autorisé.")
+                        """
 
-                if destination == opposite[key]:  # 🚗⬆️ Va tout droit (Priorité 1)
-                    send_to_display(f"✅ {key} va tout droit vers {destination}, passage immédiat.")
-
-                elif destination == right_turns[key]:  # 🚗🔄 Tourne à droite (Priorité 2)
-                    blocking_left_turns = [v for v in waiting_vehicles if v[1] == left_turns[v[0]]]
-                    if blocking_left_turns:
-                        send_to_display(f"⛔ {key} tourne à droite vers {destination}, attend véhicule tournant à gauche.")
-                        waiting_vehicles.append((key, destination, message))
-                    else:
-                        send_to_display(f"✅ {key} tourne à droite vers {destination}, passage autorisé.")
-
-                elif destination == left_turns[key]:  # ⬅️ Tourne à gauche (Priorité 3)
-                    blocking_vehicles = [
-                        v for v in waiting_vehicles 
-                        if v[1] in (right_turns[v[0]], opposite[v[0]])  # Droite ou tout droit
-                    ]
-                    if blocking_vehicles:
-                        send_to_display(f"⛔ {key} tourne à gauche vers {destination}, attend priorité.")
-                        waiting_vehicles.append((key, destination, message))
-                    else:
-                        send_to_display(f"✅ {key} tourne à gauche vers {destination}, passage autorisé.")
-
-        except sysv_ipc.BusyError:
-            pass  
+            except sysv_ipc.BusyError:
+                pass  
 
     # Vérifier les véhicules en attente
     for v in waiting_vehicles[:]:  
-        key, destination, message = v
+        key, destination = v
+        """
         blocking_vehicles = [
             v for v in waiting_vehicles 
             if v[1] in (right_turns[v[0]], opposite[v[0]])  # Véhicules plus prioritaires
         ]
-        if not blocking_vehicles:
-            send_to_display(f"🚦 {key} tourne à gauche vers {destination}, passage autorisé.")
-            waiting_vehicles.remove(v)
+        if not blocking_vehicles:"""
+        waiting_vehicles.remove(v)
+        return format_message(key, destination) # passage autorisé.
 
     time.sleep(1)  
 
@@ -95,23 +98,22 @@ def keys_to_index(key):
 
 def gestion_traffic(display_socket):
     "laisse passer les véhicules tant que l'état des lights est le même"
-    while True : #gérer arret clavier ?
-        current_light_state = light_state
-        send_to_display(current_light_state)
-        while current_light_state == light_state :
-            next_vehicule = gestion_priorite(current_light_state)
-            send_to_display(next_vehicule, display_socket)
+    current_light_state = light_state
+    send_to_display(current_light_state, display_socket)
+    while current_light_state == light_state :
+        next_vehicule = gestion_priorite(current_light_state)
+        send_to_display(next_vehicule, display_socket)
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, handler_arret_clavier)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as coord_socket:
+        coord_socket.setblocking(False)
         coord_socket.bind((HOST, PORT))
         coord_socket.listen(1)
         display_socket, address = coord_socket.accept()
-        try:
-            print("🚦 Démarrage du coordinateur...")
+        print("🚦 Démarrage du coordinateur...")
+        while not_stopped :
             gestion_traffic(display_socket)
 
-        except KeyboardInterrupt:
-            print("⛔ Arrêt du coordinateur.")
-        finally:
-            light_state_shm.close()
+        print("⛔ Arrêt du coordinateur.")
+        light_state_shm.close()
