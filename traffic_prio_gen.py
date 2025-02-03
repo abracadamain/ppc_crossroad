@@ -1,4 +1,4 @@
-from traffic_gen import genere_traffic, routes
+from traffic_gen import genere_traffic, mq_creation, handler_arret_clavier, routes, stopped
 import numpy as np
 import multiprocessing.shared_memory as sm
 import os
@@ -18,4 +18,9 @@ def signal_prio(source) :
     os.kill(lights_pid, sig)
 
 if __name__ == "__main__" :
-    genere_traffic(routes, 5, True)
+    signal.signal(signal.SIGINT, handler_arret_clavier)
+    while not stopped :
+        genere_traffic(routes, 5, True)
+    print("arret traffic prio gen")
+    for key in routes :
+        mq_creation(key).remove()

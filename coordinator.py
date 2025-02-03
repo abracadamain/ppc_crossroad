@@ -8,12 +8,12 @@ from traffic_gen import mq_creation, key_north, key_south, key_east, key_west
 import signal
 
 #arret clavier
-not_stopped = True
+stopped = False
 
 def handler_arret_clavier(sig, frame):
-    global not_stopped
+    global stopped
     if sig == signal.SIGINT:
-        not_stopped = False
+        stopped = True
 
 # Configuration du socket TCP
 HOST = "127.0.0.1"
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         coord_socket.listen(1)
         display_socket, address = coord_socket.accept()
         print("🚦 Démarrage du coordinateur...")
-        while not_stopped :
+        while not stopped :
             gestion_traffic(display_socket)
 
         print("⛔ Arrêt du coordinateur.")
