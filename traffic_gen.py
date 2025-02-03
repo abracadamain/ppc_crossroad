@@ -1,7 +1,16 @@
 import sysv_ipc
 import random
 import time
+import signal
 from traffic_prio_gen import signal_prio
+
+#arret clavier
+stopped = False
+
+def handler_arret_clavier(sig, frame):
+    global stopped
+    if sig == signal.SIGINT:
+        stopped = True
 
 key_north = 100
 key_south = 200
@@ -23,16 +32,20 @@ def genere_vehicule(source, destinations) :
     return vehicule_prio
 
 def genere_traffic(routes, densite, prio) :
-    while True : #ajouter condition d'arret et supprimer mq
-        source = random.choice(routes)
-        mq = mq_creation(source)
-        vehicule = genere_vehicule(source, routes)
-        if prio :
-            mq.send(vehicule, type=2) #type 1 : traffic prio
-            signal_prio(source)
-        else :
-            mq.send(vehicule, type=1) #type 1 : traffic normal
-        time.sleep(densite)
+    source = random.choice(routes)
+    mq = mq_creation(source)
+    vehicule = genere_vehicule(source, routes)
+    if prio :
+        mq.send(vehicule, type=2) #type 1 : traffic prio
+        signal_prio(source)
+    else :
+        mq.send(vehicule, type=1) #type 1 : traffic normal
+    time.sleep(densite)
 
 if __name__ == "__main__" :
-    genere_traffic(routes, 5, False)
+    signal.signal(signal.SIGINT, handler_arret_clavier)
+    while not stopped :
+        genere_traffic(routes, 5, False)
+    print("arret traffic gen")
+    for key in routes :
+        mq_creation(key).remove()
