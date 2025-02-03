@@ -6,6 +6,7 @@ import socket
 from multiprocessing import Lock
 from traffic_gen import mq_creation, key_north, key_south, key_east, key_west
 import signal
+import select
 
 #arret clavier
 stopped = False
@@ -99,9 +100,11 @@ def keys_to_index(key):
 def gestion_traffic(display_socket):
     "laisse passer les véhicules tant que l'état des lights est le même"
     current_light_state = light_state
-    send_to_display(current_light_state, display_socket)
+    print(current_light_state)
+    send_to_display(str(current_light_state), display_socket)
     while current_light_state == light_state :
         next_vehicule = gestion_priorite(current_light_state)
+        print(next_vehicule)
         send_to_display(next_vehicule, display_socket)
 
 if __name__ == "__main__":
@@ -110,10 +113,12 @@ if __name__ == "__main__":
         coord_socket.setblocking(False)
         coord_socket.bind((HOST, PORT))
         coord_socket.listen(1)
-        display_socket, address = coord_socket.accept()
-        print("🚦 Démarrage du coordinateur...")
         while not stopped :
-            gestion_traffic(display_socket)
+            readable, writable, error = select.select([coord_socket], [], [], 1)
+            if coord_socket in readable:
+                display_socket, address = coord_socket.accept()
+                print("🚦 Démarrage du coordinateur...")
+                gestion_traffic(display_socket)
 
         print("⛔ Arrêt du coordinateur.")
         light_state_shm.close()
