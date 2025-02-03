@@ -17,7 +17,7 @@ def signal_prio(source) :
         sig = signal.SIGRTMIN #east
     else :
         sig = signal.SIGRTMIN+1 #west
-    os.kill(lights_pid, sig)
+    os.kill(lights_pid[0], sig)
 
 def genere_traffic_prio(routes, densite) :
     source = random.choice(routes)
