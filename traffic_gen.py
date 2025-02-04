@@ -40,7 +40,7 @@ def genere_traffic(routes, densite) :
 if __name__ == "__main__" :
     signal.signal(signal.SIGINT, handler_arret_clavier)
     while not stopped :
-        genere_traffic(routes, 5)
+        genere_traffic(routes, 20)
     print("arret traffic gen")
     for key in routes :
         mq_creation(key).remove()

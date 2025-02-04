@@ -30,7 +30,7 @@ def genere_traffic_prio(routes, densite) :
 if __name__ == "__main__" :
     signal.signal(signal.SIGINT, handler_arret_clavier)
     while not stopped :
-        genere_traffic_prio(routes, 5)
+        genere_traffic_prio(routes, 40)
     print("arret traffic prio gen")
     for key in routes :
         mq_creation(key).remove()

@@ -25,16 +25,16 @@ def display_light():
     global priority_source
     if priority_mode== 1:
         shared_array[:]=False
-        print(priority_source)
+        #print(priority_source)
         shared_array[priority_source]=True
-        logging.info(shared_array)
+        #logging.info(shared_array)
     else:
         if traffic_state== 0:
             shared_array[:] = [True, True, False, False] 
-            logging.info(shared_array)
+            #logging.info(shared_array)
         else:
             shared_array[:] = [False, False, True, True]
-            logging.info(shared_array)
+            #logging.info(shared_array)
 
 
 def handle_priority_vehicle(signum, frame):
@@ -65,9 +65,10 @@ def setup_signal_handlers():
 def normal_light_change():
     global traffic_state
     global priority_mode
+    time.sleep(30)
     while True:         
         if priority_mode== 0:
-            time.sleep(30)      
+                  
             traffic_state= 1 - traffic_state #change light state every 30 seconds
         display_light()
 
