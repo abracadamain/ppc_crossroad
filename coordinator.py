@@ -4,7 +4,7 @@ import numpy as np
 import time
 import socket
 from multiprocessing import Lock
-from traffic_gen import mq_creation, key_north, key_south, key_east, key_west
+from traffic_gen import key_north, key_south, key_east, key_west
 import signal
 import select
 
@@ -20,6 +20,14 @@ def handler_arret_clavier(sig, frame):
 HOST = "127.0.0.1"
 PORT = 65432
 
+def mq_creation(key) :
+    try:
+        mq = sysv_ipc.MessageQueue(key, 0)
+        return mq
+    except sysv_ipc.ExistentialError:
+        print(f"Message queue with key {key} doesn't exist.")
+        return sysv_ipc.MessageQueue(key, sysv_ipc.IPC_CREX) # on recrée la queue
+    
 mqueues = {
     key_north: mq_creation(key_north),
     key_south: mq_creation(key_south),
@@ -116,11 +124,14 @@ def gestion_traffic(display_socket):
     "laisse passer les véhicules tant que l'état des lights est le même"
     current_light_state = light_state
     print(current_light_state)
-    send_light_to_display(current_light_state, display_socket)
+    try :
+        send_light_to_display(current_light_state, display_socket)
+    except OSError as err:
+        print(f"Erreur lors de l'envoi du véhicule : {err}")
     while current_light_state.all() == light_state.all() :
         next_vehicule = gestion_priorite(current_light_state)
-        print(next_vehicule)
-        if next_vehicule:
+        if next_vehicule != None:
+            print('prochain véhicule' + next_vehicule)
             try:
                 send_voiture_to_display(next_vehicule, display_socket)
             except OSError as err:
