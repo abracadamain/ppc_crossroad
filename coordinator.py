@@ -60,8 +60,8 @@ def send_light_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
     if display_socket:
         try:
-            message="L:"+message
-            display_socket.sendall(message.astype(np.uint8).tobytes())
+            message=message
+            display_socket.sendall(b"L:"+message.astype(np.uint8).tobytes())
         except OSError as err:
              print(f"Error sending light information:{err}")
 
