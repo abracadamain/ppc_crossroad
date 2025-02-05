@@ -13,54 +13,57 @@ def display():
             client_socket.connect((HOST, PORT))  # Se connecter au serveur
             
             data = client_socket.recv(1024)  # Réception des données
-            
-            try:
-                # Essayer de décoder le message comme un tableau d'entiers uint8
-                decode_message = np.frombuffer(data, dtype=np.uint8)
+            if not data:
+                print("Server closed the connection.")
+                break
+            if data.startswith(b"L:"):
+            # Essayer de décoder le message comme un tableau d'entiers uint8
+                decode_message = np.frombuffer(data[2:], dtype=np.uint8)
                 for i in range(4):
                     direction = ["north", "south", "west", "east"]
                     if decode_message[i] == 1:
                         print(f"Green light on the {direction[i]}")
                     else:
                         print(f"Red light on the {direction[i]}")
-            except Exception as e:
-                # Si le décodage échoue, on tente de traiter le message comme une chaîne de caractères
-                try:
-                    data = data.decode()
-                    source, destination, prio = data.split(",")
+            
+            elif data.startswith(b"V:"):    
+                data = data[2:].decode().strip()
+                print(f"Received data: {data}")
+                source, destination, prio = data.split(",")
 
-                    # Traitement des messages pour les directions
-                    if source == "north":
-                        if destination == "south":
-                            print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                        elif destination == "east":
-                            print(f"Car {prio} coming from the {source} turns right to {destination}")
-                        else:
-                            print(f"Car {prio} coming from the {source} turns left to {destination}")
-                    elif source == "south":
-                        if destination == "north":
-                            print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                        elif destination == "west":
-                            print(f"Car {prio} coming from the {source} turns right to {destination}")
-                        else:
-                            print(f"Car {prio} coming from the {source} turns left to {destination}")
-                    elif source == "east":
-                        if destination == "west":
-                            print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                        elif destination == "south":
-                            print(f"Car {prio} coming from the {source} turns right to {destination}")
-                        else:
-                            print(f"Car {prio} coming from the {source} turns left to {destination}")
+                # Traitement des messages pour les directions
+                if source == "north":
+                    if destination == "south":
+                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                    elif destination == "east":
+                        print(f"Car {prio} coming from the {source} turns right to {destination}")
                     else:
-                        if destination == "east":
-                            print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                        elif destination == "north":
-                            print(f"Car {prio} coming from the {source} turns right to {destination}")
-                        else:
-                            print(f"Car {prio} coming from the {source} turns left to {destination}")
-                except ValueError:
-                    print("Erreur : format des données incorrect.")
+                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                elif source == "south":
+                    if destination == "north":
+                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                    elif destination == "west":
+                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                    else:
+                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                elif source == "east":
+                    if destination == "west":
+                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                    elif destination == "south":
+                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                    else:
+                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                else:
+                    if destination == "east":
+                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                    elif destination == "north":
+                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                    else:
+                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+            else:
+                print("Erreur: Données reçues non reconnues.")
             time.sleep(2)
+        
 
         except socket.error as err:
             print(f"Erreur de connexion au serveur : {err}")

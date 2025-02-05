@@ -42,6 +42,8 @@ def send_voiture_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
     if message is not None and display_socket:
         try:
+            message="C:"+message
+            print(f"Sending vehicle info: {message}")
             display_socket.sendall(message.encode())
         except OSError as err:
             print(f"Error sending vehicle information:{err}")
@@ -50,6 +52,7 @@ def send_light_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
     if display_socket:
         try:
+            message="L:"+message
             display_socket.sendall(message.astype(np.uint8).tobytes())
         except OSError as err:
              print(f"Error sending light information:{err}")
