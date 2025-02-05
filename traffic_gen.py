@@ -27,34 +27,37 @@ def mq_creation(key) :
         print(f"Message queue with key {key} already exists.")
         sysv_ipc.MessageQueue(key).remove()
         return sysv_ipc.MessageQueue(key, sysv_ipc.IPC_CREX) # on recrée la queue
+    
+def mqs_creation() :
+    """Création de toutes les mq"""
+    mqueues = {
+        key_north: mq_creation(key_north),
+        key_south: mq_creation(key_south),
+        key_east: mq_creation(key_east),
+        key_west: mq_creation(key_west)
+    }
+    return mqueues
 
-def genere_vehicule(source, destinations) :
-    print(source)
+def genere_vehicule(destinations) :
     destination = random.choice(destinations)
     vehicule = (str(destination)).encode()
     print(vehicule)
     return vehicule
 
-def genere_traffic(routes, densite) :
-    global key_used
+def genere_traffic(routes, densite, mq) :
     source = random.choice(routes)
-    if source not in key_used :
-        mq = mq_creation(source)
-        key_used.append(source)
-    else :
-        mq = sysv_ipc.MessageQueue(source)
-    vehicule = genere_vehicule(source, routes)
+    vehicule = genere_vehicule(routes)
     try:
-        mq.send(vehicule, type=1)  # type 1 : traffic normal
+        mq[source].send(vehicule, type=1)  # type 1 : traffic normal
     except sysv_ipc.Error as e:
         print(f"Error sending vehicle to message queue: {e}")
     time.sleep(densite)
 
 if __name__ == "__main__" :
-    key_used = []
+    mq = mqs_creation()
     signal.signal(signal.SIGINT, handler_arret_clavier)
     while not stopped :
-        genere_traffic(routes, 5)
+        genere_traffic(routes, 5, mq)
     print("arret traffic gen")
     for key in routes :
         try:
