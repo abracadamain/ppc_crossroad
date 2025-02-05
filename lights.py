@@ -75,7 +75,10 @@ def normal_light_change():
 
 def main():
     process_id = os.getpid()
-    lights_pid = sm.SharedMemory(create=True, size=4, name="lights_pid")
+    try :
+        lights_pid = sm.SharedMemory(create=True, size=4, name="lights_pid")
+    except FileExistsError:
+        lights_pid = sm.SharedMemory(name="lights_pid")   
     pid_array = np.ndarray((1,), dtype=np.int32, buffer=lights_pid.buf)
     pid_array[0] = process_id #store process pid in shared memory 
 

@@ -121,11 +121,14 @@ def gestion_traffic(display_socket):
     "laisse passer les véhicules tant que l'état des lights est le même"
     current_light_state = light_state
     print(current_light_state)
-    send_light_to_display(current_light_state, display_socket)
+    try :
+        send_light_to_display(current_light_state, display_socket)
+    except OSError as err:
+        print(f"Erreur lors de l'envoi du véhicule : {err}")
     while current_light_state.all() == light_state.all() :
         next_vehicule = gestion_priorite(current_light_state)
-        print(next_vehicule)
-        if next_vehicule:
+        if next_vehicule != None:
+            print('prochain véhicule' + next_vehicule)
             try:
                 send_voiture_to_display(next_vehicule, display_socket)
             except OSError as err:
