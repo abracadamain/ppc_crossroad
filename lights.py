@@ -15,6 +15,10 @@ SIGNAL_EAST = signal.SIGRTMIN+1  # east
 traffic_state = 0 # 0: NS green light, 1: WE green light
 priority_mode = 0  # 0: normal state, 1: priority state
 priority_source = -1 # record the direction of the priority car (-1: no, 0: N, 1: S, 2: W, 3: E)
+try:
+    sm.SharedMemory(name="light_state").unlink()
+except FileNotFoundError:
+    pass  # If it doesn't exist, proceed normally
 light_state=sm.SharedMemory(create=True,size=4,name="light_state")#create a shared_memory to send information to process coordinator
 data=np.array([True,True,False,False])#initiate the light state as North:green,South:green,West:red,East:red
 shared_array=np.ndarray(data.shape,dtype=np.bool_,buffer=light_state.buf)
@@ -95,9 +99,11 @@ def main():
     finally:
         light_process.terminate()
         light_process.join()
-        light_state.close()
-        light_state.unlink()
-        lights_pid.close()
-        lights_pid.unlink()
+        for shm in [light_state, lights_pid]:
+            try:
+                shm.close()
+                shm.unlink()
+            except FileNotFoundError:
+                pass
 if __name__ == "__main__":
     main()
