@@ -40,36 +40,40 @@ def display():
                 data = data[2:].decode().strip()
                 print(f"Received data: {data}")
                 source, destination, prio = data.split(",")
+                if prio==True:
+                    prio_texte="priority"
+                else:
+                    prio_texte="normal"
 
                 # Traitement des messages pour les directions
                 if source == "north":
                     if destination == "south":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                        print(f"{prio_texte} car coming from the {source} goes straight to {destination}")
                     elif destination == "east":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns right to {destination}")
                     else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns left to {destination}")
                 elif source == "south":
                     if destination == "north":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                        print(f"{prio_texte} car coming from the {source} goes straight to {destination}")
                     elif destination == "west":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns right to {destination}")
                     else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns left to {destination}")
                 elif source == "east":
                     if destination == "west":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                        print(f"{prio_texte} car coming from the {source} goes straight to {destination}")
                     elif destination == "south":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns right to {destination}")
                     else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns left to {destination}")
                 else:
                     if destination == "east":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
+                        print(f"{prio_texte} car coming from the {source} goes straight to {destination}")
                     elif destination == "north":
-                        print(f"Car {prio} coming from the {source} turnsn3 lights.py right to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turnsn3 lights.py right to {destination}")
                     else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                        print(f"{prio_texte} car coming from the {source} turns left to {destination}")
             else:
                 print("Erreur: Données reçues non reconnues.")
         except (socket.timeout, ConnectionResetError, BrokenPipeError):
