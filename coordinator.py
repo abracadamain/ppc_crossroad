@@ -28,7 +28,7 @@ def handler_arret_clavier(sig, frame):
 HOST = "127.0.0.1"
 PORT = 65432
 
-def mq_creation(key) :
+def mq_recup(key) :
     try:
         mq = sysv_ipc.MessageQueue(key, 0)
         return mq
@@ -37,10 +37,10 @@ def mq_creation(key) :
         return sysv_ipc.MessageQueue(key, sysv_ipc.IPC_CREX) # on recrée la queue
     
 mqueues = {
-    key_north: mq_creation(key_north),
-    key_south: mq_creation(key_south),
-    key_east: mq_creation(key_east),
-    key_west: mq_creation(key_west)
+    key_north: mq_recup(key_north),
+    key_south: mq_recup(key_south),
+    key_east: mq_recup(key_east),
+    key_west: mq_recup(key_west)
 }
 
 # Chargement de l'état des feux depuis la mémoire partagée

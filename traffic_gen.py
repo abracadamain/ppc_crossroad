@@ -3,6 +3,13 @@ import random
 import time
 import signal
 
+key_north = 100
+key_south = 200
+key_east = 300
+key_west = 400
+
+routes = [key_north, key_south, key_east, key_west]
+
 #arret clavier
 stopped = False
 
@@ -11,14 +18,6 @@ def handler_arret_clavier(sig, frame):
     if sig == signal.SIGINT:
         stopped = True
 
-key_north = 100
-key_south = 200
-key_east = 300
-key_west = 400
-
-routes = [key_north, key_south, key_east, key_west]
-
-# ! CREAT crée la queue mais si existe déjà réutilise : attention a supprimer à la fin
 def mq_creation(key) :
     try:
         mq = sysv_ipc.MessageQueue(key, sysv_ipc.IPC_CREX)
@@ -57,7 +56,7 @@ if __name__ == "__main__" :
     mq = mqs_creation()
     signal.signal(signal.SIGINT, handler_arret_clavier)
     while not stopped :
-        genere_traffic(routes, 5, mq)
+        genere_traffic(routes, 2, mq)
     print("arret traffic gen")
     for key in routes :
         try:
