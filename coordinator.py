@@ -48,10 +48,8 @@ light_state_shm = sm.SharedMemory(name="light_state")
 light_state = np.ndarray((4,), dtype=np.bool_, buffer=light_state_shm.buf)
 
 # Définition des directions
-right_turns = {key_north: key_east, key_south: key_west, key_east: key_south, key_west: key_north}
-left_turns = {key_north: key_west, key_south: key_east, key_east: key_north, key_west: key_south}
-opposite = {key_north: key_south, key_south: key_north, key_east: key_west, key_west: key_east}
-
+left_turns = {key_north: key_east, key_south: key_west, key_east: key_south, key_west: key_north}
+right_turns = {key_north: key_west, key_south: key_east, key_east: key_north, key_west: key_south}
 waiting_vehicles = []  # Liste des véhicules en attente
 
 def send_voiture_to_display(message, display_socket):
@@ -98,17 +96,6 @@ def gestion_priorite(current_light_state):
                             return format_message(key, destination, False)
                         elif destination == left_turns[key]:  # Tourne à gauche (Priorité 3)
                             waiting_vehicles.append((key, destination)) #en attente, on verif d'abord que les véhicules d'en face passent d'abord
-                            """
-                            blocking_vehicles = [
-                                v for v in waiting_vehicles 
-                                if v[1] in (right_turns[v[0]], opposite[v[0]])  # Droite ou tout droit
-                            ]
-                            if blocking_vehicles:
-                            # attend priorité
-                                waiting_vehicles.append((key, destination, message))
-                            else:
-                                send_to_display(f"✅ {key} tourne à gauche vers {destination}, passage autorisé.")
-                            """
 
             except sysv_ipc.BusyError:
                 pass  
@@ -116,12 +103,6 @@ def gestion_priorite(current_light_state):
     # Vérifier les véhicules en attente
     for v in waiting_vehicles[:]:  
         key, destination = v
-        """
-        blocking_vehicles = [
-            v for v in waiting_vehicles 
-            if v[1] in (right_turns[v[0]], opposite[v[0]])  # Véhicules plus prioritaires
-        ]
-        if not blocking_vehicles:"""
         print(f"Véhicules en attente: {waiting_vehicles}")  # Debug
         waiting_vehicles.remove(v)
         return format_message(key, destination,False) # passage autorisé.

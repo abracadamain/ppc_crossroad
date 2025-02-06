@@ -37,8 +37,10 @@ def mqs_creation() :
     }
     return mqueues
 
-def genere_vehicule(destinations) :
-    destination = random.choice(destinations)
+def genere_vehicule(source, destinations) :
+    possible_destinations = destinations.copy()
+    possible_destinations.remove(source) #demi-tour non autorisé
+    destination = random.choice(possible_destinations)
     vehicule = (str(destination)).encode()
     print(vehicule)
     return vehicule
@@ -46,7 +48,7 @@ def genere_vehicule(destinations) :
 def genere_traffic(routes, densite, mq) :
     source = random.choice(routes)
     print(source)
-    vehicule = genere_vehicule(routes)
+    vehicule = genere_vehicule(source, routes)
     try:
         mq[source].send(vehicule, type=1)  # type 1 : traffic normal
     except sysv_ipc.Error as e:

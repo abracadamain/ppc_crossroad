@@ -52,7 +52,7 @@ def signal_prio(source) :
 
 def genere_traffic_prio(routes, densite, mq) :
     source = random.choice(routes)
-    vehicule = genere_vehicule(routes)
+    vehicule = genere_vehicule(source, routes)
     try:
         mq[source].send(vehicule, type=2)  # type 2 : traffic prio
     except sysv_ipc.Error as e:
