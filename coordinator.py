@@ -134,6 +134,8 @@ def gestion_traffic(display_socket):
             if next_vehicule:
                 print(f"prochain véhicule + {next_vehicule}")
                 send_voiture_to_display(next_vehicule, display_socket)
+            if "True"in next_vehicule:
+                continue
             time.sleep(2)
         
 
