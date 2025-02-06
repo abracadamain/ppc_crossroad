@@ -124,6 +124,7 @@ def gestion_traffic(display_socket):
 
     while not stopped:
             if not np.array_equal(current_light_state,light_state):
+                print("traffic state changes,stop the passage of normal cars.")
                 break
             next_vehicule=gestion_priorite(current_light_state)
             if next_vehicule:
