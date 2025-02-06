@@ -123,13 +123,8 @@ def gestion_traffic(display_socket):
         print(f"Failed to send the message of lights: {err}")
 
     while not stopped:
-        #current_light_state.all() == light_state.all() :
-            #next_vehicule = gestion_priorite(current_light_state)
-            #print(next_vehicule)
             if not np.array_equal(current_light_state,light_state):
-                print("traffic state changes,stop the passage of normal cars.")
                 break
-            #if next_vehicule != None:
             next_vehicule=gestion_priorite(current_light_state)
             if next_vehicule:
                 print(f"prochain véhicule + {next_vehicule}")
