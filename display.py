@@ -16,7 +16,7 @@ def connect_to_server():
             return client_socket
         except (socket.error, ConnectionRefusedError) as err:
             print(f"Connection failed: {err}, retrying in 5 seconds...")
-            time.sleep(5)  # Wait before retrying
+            time.sleep(2)  # Wait before retrying
 def display():
     client_socket = connect_to_server()
     while True:
@@ -36,7 +36,7 @@ def display():
                     else:
                         print(f"Red light on the {direction[i]}")
             
-            elif data.startswith(b"V:"):    
+            elif data.startswith(b"C:"):    
                 data = data[2:].decode().strip()
                 print(f"Received data: {data}")
                 source, destination, prio = data.split(",")
