@@ -59,7 +59,7 @@ if __name__ == "__main__" :
     mq = mqs_creation()
     signal.signal(signal.SIGINT, handler_arret_clavier)
     while not stopped :
-        genere_traffic(routes, 2, mq)
+        genere_traffic(routes, 5, mq)
     print("arret traffic gen")
     for key in routes :
         try:
