@@ -15,14 +15,16 @@ SIGNAL_EAST = signal.SIGRTMIN+1  # east
 traffic_state = 0 # 0: NS green light, 1: WE green light
 priority_mode = 0  # 0: normal state, 1: priority state
 priority_source = -1 # record the direction of the priority car (-1: no, 0: N, 1: S, 2: W, 3: E)
+try:
+    sm.SharedMemory(name="light_state").unlink()
+except FileNotFoundError:
+    pass  # If it doesn't exist, proceed normally
 light_state=sm.SharedMemory(create=True,size=4,name="light_state")#create a shared_memory to send information to process coordinator
 data=np.array([True,True,False,False])#initiate the light state as North:green,South:green,West:red,East:red
 shared_array=np.ndarray(data.shape,dtype=np.bool_,buffer=light_state.buf)
 
 def display_light():
-    global traffic_state
-    global priority_mode
-    global priority_source
+    global traffic_state, priority_mode, priority_source
     if priority_mode== 1:
         shared_array[:]=False
         print(priority_source)
@@ -38,8 +40,7 @@ def display_light():
 
 
 def handle_priority_vehicle(signum, frame):
-    global priority_mode
-    global priority_source
+    global priority_mode, priority_source
     priority_mode= 1
     if signum == SIGNAL_NORTH:
         priority_source= 0
@@ -62,42 +63,45 @@ def setup_signal_handlers():
     signal.signal(SIGNAL_EAST, handle_priority_vehicle)
 
 
-def normal_light_change():
-    global traffic_state
-    global priority_mode
+#def normal_light_change():
+    #global traffic_state
+    #global priority_mode
     
-    while True:         
-        if priority_mode== 0:
-            time.sleep(10)      
-            traffic_state= 1 - traffic_state #change light state every 30 seconds
-        display_light()
+    #while True:         
+        #if priority_mode== 0:
+            #time.sleep(10)      
+            #traffic_state= 1 - traffic_state #change light state every 30 seconds
+        #display_light()
 
 
 def main():
+    global traffic_state, priority_mode
     process_id = os.getpid()
-    try :
+    try:
         lights_pid = sm.SharedMemory(create=True, size=4, name="lights_pid")
     except FileExistsError:
-        lights_pid = sm.SharedMemory(name="lights_pid")   
+        lights_pid = sm.SharedMemory(name="lights_pid")
+    
     pid_array = np.ndarray((1,), dtype=np.int32, buffer=lights_pid.buf)
-    pid_array[0] = process_id #store process pid in shared memory 
-
+    pid_array[0] = process_id
+    
     setup_signal_handlers()
-
-    light_process = multiprocessing.Process(target=normal_light_change)
-    light_process.start()
-
+    
     try:
         while True:
-            time.sleep(1)
+            if priority_mode == 0:
+                time.sleep(10)
+                traffic_state = 1 - traffic_state
+                display_light()
+            time.sleep(1)  # Short delay to check for signals
     except KeyboardInterrupt:
         print("Arrêt du processus des feux.")
     finally:
-        light_process.terminate()
-        light_process.join()
-        light_state.close()
-        light_state.unlink()
-        lights_pid.close()
-        lights_pid.unlink()
+        for shm in [light_state, lights_pid]:
+            try:
+                shm.close()
+                shm.unlink()
+            except FileNotFoundError:
+                pass
 if __name__ == "__main__":
     main()

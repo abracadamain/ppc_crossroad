@@ -45,6 +45,7 @@ def genere_vehicule(destinations) :
 
 def genere_traffic(routes, densite, mq) :
     source = random.choice(routes)
+    print(source)
     vehicule = genere_vehicule(routes)
     try:
         mq[source].send(vehicule, type=1)  # type 1 : traffic normal
