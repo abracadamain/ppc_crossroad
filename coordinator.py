@@ -15,7 +15,15 @@ def handler_arret_clavier(sig, frame):
     global stopped
     if sig == signal.SIGINT:
         stopped = True
-
+    try:
+        light_state_shm.close()
+        light_state_shm.unlink()
+    except FileNotFoundError:
+        pass
+    if coord_socket:
+        coord_socket.close()
+    if display_socket:
+        display_socket.close()
 # Configuration du socket TCP
 HOST = "127.0.0.1"
 PORT = 65432
@@ -48,19 +56,21 @@ waiting_vehicles = []  # Liste des véhicules en attente
 
 def send_voiture_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
-    if message is not None and display_socket:
+    if message and display_socket:
+        message="C:"+message
+        print(f"Sending vehicle info: {message}")
         try:
-            message="C:"+message
-            print(f"Sending vehicle info: {message}")
             display_socket.sendall(message.encode())
-        except OSError as err:
-            print(f"Error sending vehicle information:{err}")
+        except (BrokenPipeError, OSError) as err:
+            print(f"Error sending vehicle information: {err}")
+
+        #except OSError as err:
+            #print(f"Error sending vehicle information:{err}")
 
 def send_light_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
     if display_socket:
         try:
-            message=message
             display_socket.sendall(b"L:"+message.astype(np.uint8).tobytes())
         except OSError as err:
              print(f"Error sending light information:{err}")
@@ -77,6 +87,7 @@ def gestion_priorite(current_light_state):
         if current_light_state[keys_to_index(key)] : #si cette mqueue a le feu vert(True)
             try:
                 message, msg_type = mqueue.receive(block=False)
+                print(f"Message reçu: {message}, Type: {msg_type}")  # Debug
                 destination = message.decode()
                 if message != None :
                     if msg_type == 2:  # Prioritaire : Passe immédiatement
@@ -111,8 +122,9 @@ def gestion_priorite(current_light_state):
             if v[1] in (right_turns[v[0]], opposite[v[0]])  # Véhicules plus prioritaires
         ]
         if not blocking_vehicles:"""
+        print(f"Véhicules en attente: {waiting_vehicles}")  # Debug
         waiting_vehicles.remove(v)
-        return format_message(key, destination) # passage autorisé.
+        return format_message(key, destination,False) # passage autorisé.
 
     time.sleep(1)  
 
@@ -122,37 +134,55 @@ def keys_to_index(key):
 
 def gestion_traffic(display_socket):
     "laisse passer les véhicules tant que l'état des lights est le même"
-    current_light_state = light_state
+    current_light_state = light_state.copy()
     print(current_light_state)
     try :
         send_light_to_display(current_light_state, display_socket)
-    except OSError as err:
-        print(f"Erreur lors de l'envoi du véhicule : {err}")
-    while current_light_state.all() == light_state.all() :
-        next_vehicule = gestion_priorite(current_light_state)
-        if next_vehicule != None:
-            print('prochain véhicule' + next_vehicule)
-            try:
+    except (BrokenPipeError,ConnectionResetError) as err:
+        print(f"Failed to send the message of lights: {err}")
+
+    while not stopped:
+        #current_light_state.all() == light_state.all() :
+            #next_vehicule = gestion_priorite(current_light_state)
+            #print(next_vehicule)
+            if not np.array_equal(current_light_state,light_state):
+                print("traffic state changes,stop the passage of normal cars.")
+                break
+            #if next_vehicule != None:
+            next_vehicule=gestion_priorite(current_light_state)
+            if next_vehicule:
+                print(f"prochain véhicule + {next_vehicule}")
                 send_voiture_to_display(next_vehicule, display_socket)
-            except OSError as err:
-                print(f"Erreur lors de l'envoi du véhicule : {err}")
-                break  
+            time.sleep(2)
+        
+
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, handler_arret_clavier)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as coord_socket:
-        coord_socket.setblocking(False)
-        coord_socket.bind((HOST, PORT))
-        coord_socket.listen(1)
-        while not stopped :
-            readable, writable, error = select.select([coord_socket], [], [], 1)
-            if coord_socket in readable:
-                display_socket, address = coord_socket.accept()
-                print("🚦 Démarrage du coordinateur...")
-                try:
-                    gestion_traffic(display_socket)
-                except Exception as err:
-                    print(f"Erreur dans gestion_traffic : {err}")
-
-        print("⛔ Arrêt du coordinateur.")
+    coord_socket= socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+    coord_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    coord_socket.setblocking(False)
+    coord_socket.bind((HOST, PORT))
+    coord_socket.listen(1)
+    display_socket=None
+    while not stopped :
+        readable, writable, error = select.select([coord_socket], [], [], 1)
+        if coord_socket in readable:
+            display_socket, address = coord_socket.accept()
+            print("🚦 Démarrage du coordinateur...")
+            try:
+                gestion_traffic(display_socket)
+            except Exception as err:
+                print(f"Erreur dans gestion_traffic : {err}")
+            
+    print("Arrêt du coordinateur.")
+    try:
         light_state_shm.close()
+        light_state_shm.unlink()
+    except FileNotFoundError:
+        pass
+
+    if coord_socket:
+        coord_socket.close()
+    if display_socket:
+        display_socket.close()

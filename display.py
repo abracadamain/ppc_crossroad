@@ -5,12 +5,22 @@ import time
 # Configuration du socket pour recevoir les infos de coordinator.py
 HOST = "127.0.0.1"
 PORT = 65432
-
-def display():
+def connect_to_server():
+    """Attempts to connect to the coordinator server with retries."""
     while True:
         try:
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client_socket.connect((HOST, PORT))  # Se connecter au serveur
+            client_socket.settimeout(5)  # Set a timeout for connection attempts
+            client_socket.connect((HOST, PORT))
+            print("Connected to the server")
+            return client_socket
+        except (socket.error, ConnectionRefusedError) as err:
+            print(f"Connection failed: {err}, retrying in 5 seconds...")
+            time.sleep(5)  # Wait before retrying
+def display():
+    client_socket = connect_to_server()
+    while True:
+        try:
             
             data = client_socket.recv(1024)  # Réception des données
             if not data:
@@ -57,18 +67,18 @@ def display():
                     if destination == "east":
                         print(f"Car {prio} coming from the {source} goes straight to {destination}")
                     elif destination == "north":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
+                        print(f"Car {prio} coming from the {source} turnsn3 lights.py right to {destination}")
                     else:
                         print(f"Car {prio} coming from the {source} turns left to {destination}")
             else:
                 print("Erreur: Données reçues non reconnues.")
+        except (socket.timeout, ConnectionResetError, BrokenPipeError):
+            print("Connection lost, reconnecting...")
+            client_socket.close()
+            client_socket = connect_to_server()
+        except Exception as err:
+            print(f"Unexpected error: {err}")
             time.sleep(2)
-        
-
-        except socket.error as err:
-            print(f"Erreur de connexion au serveur : {err}")
-            time.sleep(2)  # Réessayer après une courte pause
-
 if __name__ == "__main__":
     try:
         display()
