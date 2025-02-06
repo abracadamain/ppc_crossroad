@@ -1,10 +1,11 @@
 import socket
 import numpy as np
 import time
-
+from coordinator import right_turns, left_turns, opposite
 # Configuration du socket pour recevoir les infos de coordinator.py
 HOST = "127.0.0.1"
 PORT = 65432
+KEY_TO_NAME = {100: 'north', 200: 'south', 300:'east', 400:'west'}
 def connect_to_server():
     """Attempts to connect to the coordinator server with retries."""
     while True:
@@ -40,36 +41,20 @@ def display():
                 data = data[2:].decode().strip()
                 print(f"Received data: {data}")
                 source, destination, prio = data.split(",")
-
-                # Traitement des messages pour les directions
-                if source == "north":
-                    if destination == "south":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                    elif destination == "east":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
-                    else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
-                elif source == "south":
-                    if destination == "north":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                    elif destination == "west":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
-                    else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
-                elif source == "east":
-                    if destination == "west":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                    elif destination == "south":
-                        print(f"Car {prio} coming from the {source} turns right to {destination}")
-                    else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
-                else:
-                    if destination == "east":
-                        print(f"Car {prio} coming from the {source} goes straight to {destination}")
-                    elif destination == "north":
-                        print(f"Car {prio} coming from the {source} turnsn3 lights.py right to {destination}")
-                    else:
-                        print(f"Car {prio} coming from the {source} turns left to {destination}")
+                source = int(source)
+                destination = int(destination)
+                if prio == 'True':
+                    prio = 'priority'
+                else :
+                    prio = 'normal'
+                if destination == right_turns[source] :
+                    print(f"Car {prio} coming from the {KEY_TO_NAME[source]} turns right to {KEY_TO_NAME[destination]}")
+                elif destination == left_turns[source] :
+                    print(f"Car {prio} coming from the {KEY_TO_NAME[source]} turns left to {KEY_TO_NAME[destination]}")
+                elif destination == opposite[source] :
+                    print(f"Car {prio} coming from the {KEY_TO_NAME[source]} turns around to {KEY_TO_NAME[destination]}")
+                else :
+                    print(f"Car {prio} coming from the {KEY_TO_NAME[source]} goes straight to {KEY_TO_NAME[destination]}")
             else:
                 print("Erreur: Données reçues non reconnues.")
         except (socket.timeout, ConnectionResetError, BrokenPipeError):

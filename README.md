@@ -10,3 +10,4 @@
 * mettre des couleurs sur les prints des lights
 * light n'attend pas que prio passe avant de changer de state
 * lights process enfant ?
+* coordinator ne fait pas passer prio d'abord
