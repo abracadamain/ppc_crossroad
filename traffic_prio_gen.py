@@ -18,7 +18,7 @@ def handler_arret_clavier(sig, frame):
         stopped = True
 
 def mqs_recup() :
-    """Création de toutes les mq"""
+    """Récuperation de toutes les mq"""
     mqueues = {
         key_north: mq_recup(key_north),
         key_south: mq_recup(key_south),

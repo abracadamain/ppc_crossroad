@@ -39,7 +39,7 @@ def display():
             
             elif data.startswith(b"C:"):    
                 data = data[2:].decode().strip()
-                print(f"Received data: {data}")
+                #print(f"Received data: {data}") #debug
                 source, destination, prio = data.split(",")
                 source = int(source)
                 destination = int(destination)

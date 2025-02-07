@@ -1,7 +1,6 @@
 import signal
 import os
 import time
-import multiprocessing
 import multiprocessing.shared_memory as sm
 import numpy as np
 import logging
@@ -61,18 +60,6 @@ def setup_signal_handlers():
     signal.signal(SIGNAL_SOUTH, handle_priority_vehicle)
     signal.signal(SIGNAL_WEST, handle_priority_vehicle)
     signal.signal(SIGNAL_EAST, handle_priority_vehicle)
-
-
-#def normal_light_change():
-    #global traffic_state
-    #global priority_mode
-    
-    #while True:         
-        #if priority_mode== 0:
-            #time.sleep(10)      
-            #traffic_state= 1 - traffic_state #change light state every 30 seconds
-        #display_light()
-
 
 def main():
     global traffic_state, priority_mode

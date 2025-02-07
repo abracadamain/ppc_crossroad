@@ -3,7 +3,6 @@ import multiprocessing.shared_memory as sm
 import numpy as np
 import time
 import socket
-from multiprocessing import Lock
 from traffic_gen import key_north, key_south, key_east, key_west
 import signal
 import select
@@ -24,6 +23,7 @@ def handler_arret_clavier(sig, frame):
         coord_socket.close()
     if display_socket:
         display_socket.close()
+
 # Configuration du socket TCP
 HOST = "127.0.0.1"
 PORT = 65432
@@ -61,9 +61,6 @@ def send_voiture_to_display(message, display_socket):
             display_socket.sendall(message.encode())
         except (BrokenPipeError, OSError) as err:
             print(f"Error sending vehicle information: {err}")
-
-        #except OSError as err:
-            #print(f"Error sending vehicle information:{err}")
 
 def send_light_to_display(message, display_socket):
     """Envoie un message au processus display via socket TCP"""
