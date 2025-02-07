@@ -93,7 +93,6 @@ def gestion_priorite(current_light_state):
                             return format_message(key, destination, False)
                         elif destination == left_turns[key]:  # Tourne à gauche (Priorité 3)
                             waiting_vehicles.append((key, destination)) #en attente, on verif d'abord que les véhicules d'en face passent d'abord
-
             except sysv_ipc.BusyError:
                 pass  
 
@@ -127,7 +126,7 @@ def gestion_traffic(display_socket):
             if next_vehicule:
                 print(f"prochain véhicule + {next_vehicule}")
                 send_voiture_to_display(next_vehicule, display_socket)
-            if "True"in next_vehicule:
+            if next_vehicule and "True" in next_vehicule:
                 continue
             time.sleep(2)
         
